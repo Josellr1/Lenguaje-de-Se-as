@@ -1,0 +1,58 @@
+/content/runs
+
+!pip install roboflow ultralytics
+
+!pip install roboflow
+
+from roboflow import Roboflow
+rf = Roboflow(api_key="CDXYHqor4LA3NzOA6CZQ")
+project = rf.workspace("entrenamientoseas-8qgp1").project("lenguajesenas-wyuny")
+version = project.version(2)
+dataset = version.download("yolov11")
+
+from ultralytics import YOLO
+model = YOLO('/content/lenguajesenas-2/senasv1.pt')
+
+
+dataPath = '/content/lenguajesenas-2/data.yaml'
+
+results = model.train(
+    data=dataPath,
+    epochs=50,
+    imgsz=480,
+
+    # --- GPU y rendimiento ---
+    batch=16,              # usa mejor la GPU
+    device=0,              # asegura uso de la GPU
+
+    # --- Learning Rate ---
+    lr0=0.005,             # LR inicial óptimo
+    lrf=0.1,               # LR final (más preciso)
+
+    # --- Optimizador ---
+    optimizer='AdamW',     # más estable y preciso que SGD
+    momentum=0.937,
+    weight_decay=0.0005,
+
+    # --- Warmup ---
+    warmup_epochs=2,
+    warmup_momentum=0.8,
+
+    # (YOLO 11 ya no usa cosine → lo quitamos)
+    # scheduler automático
+
+    # --- Augmentación avanzada (ideal para manos/señas) ---
+    hsv_h=0.015,
+    hsv_s=0.7,
+    hsv_v=0.4,
+    degrees=5,
+    translate=0.10,
+    scale=0.40,
+    shear=2.0,
+    fliplr=0.5,           # refleja manos
+    mosaic=0.5,           # balanceado para no deformar manos
+    mixup=0.1,
+
+    # --- Early Stopping ---
+    patience=20
+)
